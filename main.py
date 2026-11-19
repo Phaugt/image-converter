@@ -25,7 +25,7 @@ configGui = resource_path("./gui/config.ui")
 try:
     saveLocation = config.get("saveLocation")
     saveAs = config.get("saveFormat")
-    if saveLocation or saveAs == "":
+    if not saveLocation or not saveAs:
         saveLocation = userfold+'/Pictures/'
         config.set("saveLocation", str(saveLocation))
         config.set("saveFormat", 'jpeg')
@@ -126,17 +126,16 @@ class GUI(QMainWindow):
         saveLocation = config.get("saveLocation")
         fileExt = str(Path(self.folderLocation.text()).suffix)
         try:
+            src = Path(self.folderLocation.text())
             if fileExt.upper() == '.HEIC':
-                fileName = str(Path(self.folderLocation.text()))
-                newName = str(Path(self.folderLocation.text()).stem)
-                saveAsNew = saveLocation+newName+".jpeg"
-                script = 'sips -s format jpeg '+"'"+str(fileName)+"'"+' --out '+"'"+str(saveAsNew)+"'"
-                os.system(script)
+                dst = Path(saveLocation) / (src.stem + ".jpeg")
+                subprocess.run(['sips', '-s', 'format', 'jpeg', str(src), '--out', str(dst)],
+                               check=True, capture_output=True)
             else:
-                image = Image.open(self.folderLocation.text())
-                fileName = str(Path(self.folderLocation.text()).stem)
+                image = Image.open(src)
                 image = image.convert('RGB')
-                image.save(saveLocation+fileName+"."+saveAs, saveAs)
+                dst = Path(saveLocation) / (src.stem + "." + saveAs)
+                image.save(dst, saveAs)
         except Exception:
             self.informationMessage("Image could not be converted to .jpeg!")
             
